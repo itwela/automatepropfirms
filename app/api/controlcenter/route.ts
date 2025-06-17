@@ -12,7 +12,10 @@ export async function POST(request: Request) {
 
     console.log('db', convex)
 
-    const { text } = await request.json();
-    console.log(text);
+    const { text, direction, strategy_message } = await request.json();
+    console.log('The Text FIled From TradingView', text);
+    console.log('The Direction FIled From TradingView', direction);
+    console.log('The Strategy Message FIled From TradingView', strategy_message);
+
     return NextResponse.json({ message: 'Trade received', text });
 }   
