@@ -52,9 +52,25 @@ const TRADING_CONFIG = {
   }
 };
 
+// Define a type for the trade object
+type Trade = {
+  direction: string;
+  comment: string;
+  symbol: string;
+  contractId: string;
+  accountId: number;
+  timeframe: string;
+  timeOfMessage: string;
+  text: string;
+  quantity: number;
+  sessionToken: string;
+};
+
 export async function POST(request: Request) {
     const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL!;
     const convex = new ConvexHttpClient(CONVEX_URL);
+
+    console.log('db', convex)
 
     try {
         const { 
@@ -111,7 +127,7 @@ export async function POST(request: Request) {
         const sessionToken = await authService.getSessionToken(username, apiKey);
 
         // 🔥 3. Build the trade object
-        const trade = {
+        const trade: Trade = {
             direction,
             comment,
             symbol,
@@ -127,7 +143,7 @@ export async function POST(request: Request) {
         console.log('Trade Object:', trade);
 
         // 🔥 4. Build super fast routing table (object literal)
-        const orderActions: Record<string, () => Promise<any>> = {
+        const orderActions: Record<string, () => Promise<unknown>> = {
             "buy_go_long": () => placeMarketOrder("buy", trade),
             "sell_exit_long": () => closePosition("buy", trade),
             "sell_go_short": () => placeMarketOrder("sell", trade),
@@ -165,7 +181,7 @@ export async function POST(request: Request) {
 }
 
 // 🔥 Ultra-fast order placement function using accountService
-async function placeMarketOrder(side: string, trade: any) {
+async function placeMarketOrder(side: string, trade: Trade) {
     console.log(`🟢 Placing ${side.toUpperCase()} market order for ${trade.symbol} (${trade.contractId})`);
     
     try {
@@ -181,7 +197,7 @@ async function placeMarketOrder(side: string, trade: any) {
 }
 
 // 🔥 Ultra-fast position closing function using accountService
-async function closePosition(side: string, trade: any) {
+async function closePosition(side: string, trade: Trade) {
     console.log(`🔴 Closing ${side.toUpperCase()} position for ${trade.symbol} (${trade.contractId})`);
     
     try {

@@ -171,12 +171,12 @@ export const AccountDiscovery: React.FC = () => {
   };
 
   // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  // const formatCurrency = (amount: number) => {
+  //   return new Intl.NumberFormat('en-US', {
+  //     style: 'currency',
+  //     currency: 'USD'
+  //   }).format(amount);
+  // };
 
   // Helper function to format timestamp
   const formatTimestamp = (timestamp: string): string => {

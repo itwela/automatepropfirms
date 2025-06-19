@@ -1,25 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { colors } from '../colors';
-import { authService } from '../services/authService';
-import { accountService, AccountInfo } from '../services/accountService';
+import { useEffect, useState } from 'react';
 import {
-  placeOrder,
+  cancelOrder,
   getContracts,
-  testMarketBuy,
-  testMarketSell,
+  getOrderStatus,
   testLimitBuy,
   testLimitSell,
+  testMarketBuy,
+  testMarketSell,
   testStopBuy,
   testStopSell,
-  getOrderStatus,
-  cancelOrder,
-  OrderType,
-  OrderSide,
-  type PlaceOrderRequest,
   type ContractInfo
 } from '../actions/tradingActions';
+import { colors } from '../colors';
+import { AccountInfo, accountService } from '../services/accountService';
+import { authService } from '../services/authService';
 
 export default function TradingTest() {
   const [accountId, setAccountId] = useState<number>(0);
@@ -67,6 +63,7 @@ export default function TradingTest() {
       setCopiedCell(cellKey);
       setTimeout(() => setCopiedCell(null), 1000);
     } catch (err) {
+      console.error('Error copying to clipboard:', err);
       // fallback: do nothing
     }
   };
@@ -114,7 +111,7 @@ export default function TradingTest() {
     }
   };
 
-  const handleAction = async (action: () => Promise<any>, actionName: string) => {
+  const handleAction = async (action: () => Promise<unknown>, actionName: string) => {
     setLoading(true);
     setResult('');
     

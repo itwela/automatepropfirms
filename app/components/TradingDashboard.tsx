@@ -23,9 +23,6 @@ export const TradingDashboard: React.FC = () => {
     }).format(amount);
   };
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(2)}%`;
-  };
 
   const getProfitColor = (profit: number) => {
     return profit >= 0 ? 'text-green-400' : 'text-red-400';
@@ -92,7 +89,7 @@ export const TradingDashboard: React.FC = () => {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as "overview" | "positions" | "orders" | "trades" | "strategy")}
             className={`px-6 py-3 font-medium border-b-2 transition-colors ${
               activeTab === tab.id
                 ? 'border-blue-500 text-blue-400'

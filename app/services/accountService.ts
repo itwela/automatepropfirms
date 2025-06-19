@@ -251,7 +251,7 @@ class AccountService {
   }
 
   // Open a long position (buy)
-  async openLongPosition(sessionToken: string, accountId: number, contractId: string, size: number = 1): Promise<any> {
+  async openLongPosition(sessionToken: string, accountId: number, contractId: string, size: number = 1): Promise<unknown> {
     try {
       console.log(`Opening LONG position for account ${accountId}, contract ${contractId}, size ${size}...`);
 
@@ -294,7 +294,7 @@ class AccountService {
   }
 
   // Open a short position (sell)
-  async openShortPosition(sessionToken: string, accountId: number, contractId: string, size: number = 1): Promise<any> {
+  async openShortPosition(sessionToken: string, accountId: number, contractId: string, size: number = 1): Promise<unknown> {
     try {
       console.log(`Opening SHORT position for account ${accountId}, contract ${contractId}, size ${size}...`);
 

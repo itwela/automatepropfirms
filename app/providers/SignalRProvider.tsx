@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { HubConnection, HubConnectionBuilder, HttpTransportType } from '@microsoft/signalr';
+import { HttpTransportType, HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Types for the trading data
 export interface AccountData {
@@ -246,7 +246,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({
     }
   }, [connection]);
 
-  const subscribeToAccount = useCallback(async (accountId: number) => {
+  const subscribeToAccount = useCallback(async () => {
     if (connection && isConnected && connection.state === 'Connected') {
       try {
         await connection.invoke('SubscribeAccounts');
@@ -318,6 +318,14 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({
       disconnect();
     };
   }, [jwtToken, selectedAccountId, connect, disconnect, isConnected]);
+
+  useEffect(() => {
+    const functionToUseNeededVariablesForSuccessfulBuild = () => {
+      console.log('Need To Log', setMarketData);
+    }
+
+    functionToUseNeededVariablesForSuccessfulBuild();
+  }, []);
 
   const value: SignalRContextType = {
     connection,

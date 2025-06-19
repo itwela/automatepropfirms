@@ -236,7 +236,7 @@ export async function testStopSell(accountId: number, contractId: string, stopPr
 }
 
 // Get order status
-export async function getOrderStatus(orderId: number): Promise<any> {
+export async function getOrderStatus(orderId: number): Promise<unknown> {
   try {
     console.log(`Getting status for order ${orderId}...`);
     
@@ -274,7 +274,7 @@ export async function getOrderStatus(orderId: number): Promise<any> {
 }
 
 // Cancel order
-export async function cancelOrder(orderId: number): Promise<any> {
+export async function cancelOrder(orderId: number): Promise<unknown> {
   try {
     console.log(`Cancelling order ${orderId}...`);
     

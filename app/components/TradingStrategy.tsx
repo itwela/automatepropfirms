@@ -174,7 +174,7 @@ export class TradingStrategyEngine {
     // Calculate indicators
     const closePrices = candles.map(c => c.close);
     const ma = this.calculateEMA(closePrices, this.config.maLength);
-    const rmi = this.calculateRMI(candles, this.config.rmiLength, this.config.momentumLength);
+    // const rmi = this.calculateRMI(candles, this.config.rmiLength, this.config.momentumLength);
     
     // Detect FVGs for each timeframe
     this.fvgs = this.config.fvgTimeframes.flatMap(tf => this.detectFVGs(candles, tf));
@@ -183,7 +183,7 @@ export class TradingStrategyEngine {
     for (let i = 3; i < candles.length; i++) {
       const current = candles[i];
       const prev = candles[i - 1];
-      const prev2 = candles[i - 2];
+      // const prev2 = candles[i - 2];
       
       // Check MA direction
       const maDirection = ma[i] > ma[i - 3] ? 'BULLISH' : ma[i] < ma[i - 3] ? 'BEARISH' : 'NEUTRAL';
@@ -308,6 +308,15 @@ export const TradingStrategy: React.FC = () => {
   const stopStrategy = useCallback(() => {
     setIsStrategyActive(false);
     console.log('Trading strategy stopped');
+  }, []);
+
+  useEffect(() => {
+
+    const functionToUseNeededVariablesForSuccessfulBuild = () => {
+      console.log('Need To Log', setSignals);
+    }
+
+    functionToUseNeededVariablesForSuccessfulBuild();
   }, []);
 
   return (
