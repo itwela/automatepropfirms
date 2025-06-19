@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@microsoft/signalr": "^8.0.7",
     "convex": "^1.24.8",
     "dotenv": "^16.5.0",
     "framer-motion": "^12.18.1",

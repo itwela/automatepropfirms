@@ -2,31 +2,106 @@
 
 import { motion } from "framer-motion";
 import { colors } from "./colors";
+import TradingTest from "./components/TradingTest";
+import { Dashboard } from "./components/Dashboard";
+import { useState, useEffect } from "react";
+import { authService } from "./services/authService";
 
 export default function Home() {
   const currentYear = new Date().getFullYear();
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'trading'>('dashboard');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load authentication and account ID on component mount
+  useEffect(() => {
+    const loadAuth = async () => {
+      try {
+        const username = process.env.NEXT_PUBLIC_USERNAME;
+        const apiKey = process.env.NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY;
+        // Only used for REST, not for SignalR anymore
+        if (username && apiKey) {
+          await authService.getSessionToken(username, apiKey);
+        }
+      } catch (error) {
+        console.error('Failed to load authentication:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadAuth();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div style={{ backgroundColor: colors.darkprimary }} className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p style={{ color: colors.whightprimary }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ backgroundColor: colors.darkprimary }} className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col  row-start-2 items-center leading-[30px]">
-        <motion.h1 style={{ color: colors.whightprimary }} className="font-bold"
+    <div style={{ backgroundColor: colors.darkprimary }} className="min-h-screen">
+      {/* Header */}
+      <header className="p-6 border-b border-gray-700">
+        <motion.h1 
+          style={{ color: colors.whightprimary }} 
+          className="text-2xl font-bold"
           initial={{ opacity: 0, y: -100 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Welcome to the Momentum Automated Control Center
+          Momentum Prop Firm Automation
         </motion.h1>
-        <motion.h2 style={{ color: colors.whightprimary }} className=""
+        <motion.p 
+          style={{ color: colors.whightprimary }} 
+          className="text-gray-400 mt-2"
           initial={{ opacity: 0, y: -100 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           Made To Extract As Much Wealth As Possible From The Market
-        </motion.h2>
+        </motion.p>
+      </header>
+
+      {/* Navigation Tabs */}
+      <div className="p-6 border-b border-gray-700">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-6 py-3 font-medium rounded-lg transition-colors ${
+              activeTab === 'dashboard'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab('trading')}
+            className={`px-6 py-3 font-medium rounded-lg transition-colors ${
+              activeTab === 'trading'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            Trading Test
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6">
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'trading' && <TradingTest />}
       </main>
+
+      {/* Footer */}
       <motion.footer 
         style={{ color: colors.whightprimary }} 
-        className="row-start-3 text-sm"
+        className="p-6 text-center text-sm border-t border-gray-700"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -35,5 +110,4 @@ export default function Home() {
       </motion.footer>
     </div>
   );
-  
 }
