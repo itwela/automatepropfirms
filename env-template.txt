@@ -1,5 +1,8 @@
 # Copy this content to a new file called .env.local in the root directory
 
+# Application Access
+NEXT_PUBLIC_ACCESS_PASSWORD=your_access_password_here
+
 # ProjectX TopStep Authentication
 NEXT_PUBLIC_USERNAME=your_username_here
 NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY=S28aUTxGRKCVxzfEoKkXpAmZd1Z7WLJ50kOUC6UuPng=
