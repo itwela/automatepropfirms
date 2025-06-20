@@ -6,18 +6,20 @@ import { authService } from '../../services/authService';
 
 dotenv.config();
 
-// Symbol to Contract mapping
+//  NOTE - ADD A SYMBOL TO CONTRACT MAP AND QUANTITY CONFIG HERE🔥 Symbol to Contract mapping
 const SYMBOL_CONTRACT_MAP: Record<string, string> = {
   'XAGUSD': 'CON.F.US.SIL.N25',
   'XAUUSD': 'CON.F.US.MGC.Q25',
-  'NGAS': 'CON.F.US.NGE.N25'
+  'XPTUSD': 'CON.F.US.PLE.N25',
+  'NGAS': 'CON.F.US.NGE.N25',
 };
 
-// 🔥 Flexible Quantity Configuration per Symbol
+//  NOTE - ADD A SYMBOL TO CONTRACT MAP AND QUANTITY CONFIG HERE🔥 Flexible Quantity Configuration per Symbol
 const SYMBOL_QUANTITY_CONFIG: Record<string, number> = {
   'XAGUSD': 2,  // 2 contracts for Silver
   'XAUUSD': 2,  // 2 contracts for Gold  
-  'NGAS': 2     // 2 contracts for Natural Gas
+  'XPTUSD': 1,   // 2 contracts for Platinum
+  'NGAS': 2,    // 2 contracts for Natural Gas
 };
 
 // 🔥 Easy Configuration Management
@@ -28,7 +30,6 @@ const TRADING_CONFIG = {
   // 🔥 Account IDs Array
   accountIds: [
     8833153,   // Real Funded Challenge Live
-    8568862,  // 100K Account
   ],
   
   // Helper function to get quantity for a symbol

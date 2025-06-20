@@ -42,12 +42,15 @@ export default function TradingTest() {
 
   // Predefined common contracts
   const commonContracts = [
+    { id: 'CON.F.US.MGC.Q25', name: 'MGC', description: 'Micro Gold (Small)' },
+    { id: 'CON.F.US.GCE.Q25', name: 'GC', description: 'Gold (Full)' },
+    { id: 'CON.F.US.SIL.N25', name: 'SIL', description: 'Micro Silver (Small)' },
+    { id: 'CON.F.US.SIE.N25', name: 'SI', description: 'Silver (Full)' },
+    { id: 'CON.F.US.PLE.N25', name: 'PL', description: 'Platinum (Full)' },
     { id: 'CON.F.US.MNQ.U25', name: 'MNQ', description: 'Micro E-mini Nasdaq-100 (Small)' },
     { id: 'CON.F.US.ENQ.U25', name: 'NQ', description: 'E-mini Nasdaq-100 (Full)' },
     { id: 'CON.F.US.EP.U25', name: 'ES', description: 'E-mini S&P 500 (Full)' },
     { id: 'CON.F.US.MES.U25', name: 'MES', description: 'Micro E-mini S&P 500 (Small)' },
-    { id: 'CON.F.US.GCE.Q25', name: 'GC', description: 'Gold (Full)' },
-    { id: 'CON.F.US.MGC.Q25', name: 'MGC', description: 'Micro Gold (Small)' },
     { id: 'CON.F.US.GMET.M25', name: 'MET', description: 'Micro Ethereum (Small)' },
     { id: 'CON.F.US.NGE.N25', name: 'NG', description: 'Natural Gas (Full)' },
     { id: 'CON.F.US.MNG.N25', name: 'MNG', description: 'Micro Natural Gas (Small)' },
