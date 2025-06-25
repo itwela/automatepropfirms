@@ -18,9 +18,9 @@ const SYMBOL_CONTRACT_MAP: Record<string, string> = {
 //  NOTE - ADD A SYMBOL TO CONTRACT MAP AND QUANTITY CONFIG HERE🔥 Flexible Quantity Configuration per Symbol
 const SYMBOL_QUANTITY_CONFIG: Record<string, number> = {
   'XAGUSD': 2,  // 2 contracts for Silver
-  'XAUUSD': 2,  // 2 contracts for Gold  
-  'NQ1!': 3,
-  'XPTUSD': 1,   // 2 contracts for Platinum
+  'XAUUSD': 4,  // 4 contracts for Gold  
+  'NQ1!': 3, // 3 contracts for Nasdaq 100
+  'XPTUSD': 1,   // 1 contract for Platinum
   'NGAS': 2,    // 2 contracts for Natural Gas
 };
 
