@@ -10,6 +10,7 @@ dotenv.config();
 const SYMBOL_CONTRACT_MAP: Record<string, string> = {
   'XAGUSD': 'CON.F.US.SIL.N25',
   'XAUUSD': 'CON.F.US.MGC.Q25',
+  'NQ1!': 'CON.F.US.MNQ.U25',
   'XPTUSD': 'CON.F.US.PLE.N25',
   'NGAS': 'CON.F.US.NGE.N25',
 };
@@ -18,6 +19,7 @@ const SYMBOL_CONTRACT_MAP: Record<string, string> = {
 const SYMBOL_QUANTITY_CONFIG: Record<string, number> = {
   'XAGUSD': 2,  // 2 contracts for Silver
   'XAUUSD': 2,  // 2 contracts for Gold  
+  'NQ1!': 3,
   'XPTUSD': 1,   // 2 contracts for Platinum
   'NGAS': 2,    // 2 contracts for Natural Gas
 };
