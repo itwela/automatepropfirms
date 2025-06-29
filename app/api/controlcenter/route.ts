@@ -19,7 +19,7 @@ const SYMBOL_CONTRACT_MAP: Record<string, string> = {
 const SYMBOL_QUANTITY_CONFIG: Record<string, number> = {
   'XAGUSD': 2,  // 2 contracts for Silver
   'XAUUSD': 4,  // 4 contracts for Gold  
-  'NQ1!': 3, // 3 contracts for Nasdaq 100
+  'NQ1!': 5, // 3 contracts for Nasdaq 100
   'XPTUSD': 1,   // 1 contract for Platinum
   'NGAS': 2,    // 2 contracts for Natural Gas
 };
