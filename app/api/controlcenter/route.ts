@@ -31,8 +31,9 @@ const TRADING_CONFIG = {
   
   // 🔥 Account IDs Array
   accountIds: [
-    8833153,   // Real Funded Challenge Live
-  ],
+    // 8833153,   // Real Funded Challenge Live
+    9380393,   // Real Funded Challenge Live
+],
   
   // Helper function to get quantity for a symbol
   getQuantity: (symbol: string): number => {
