@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import dotenv from 'dotenv';
 import { accountService } from '../../services/accountService';
 import { authService } from '../../services/authService';
+import { sendSignalsToWhopChats } from '../../services/whopServices';
 
 dotenv.config();
 
@@ -31,8 +32,8 @@ const TRADING_CONFIG = {
   
   // 🔥 Account IDs Array
   accountIds: [
-    // 8833153,   // Real Funded Challenge Live
-    9380393,   // Real Funded Challenge Live
+    10173792,   // 100k Funded Challenge Leader Account
+    // 9380393,   // 100k Funded Challenge - Currently Disabled - 3 DOLLARS FROM PASSING :D
 ],
   
   // Helper function to get quantity for a symbol
@@ -77,6 +78,8 @@ export async function POST(request: Request) {
     console.log('db', convex)
 
     try {
+
+        // incoming payload from tradingview for signal
         const { 
             text, 
             direction, 
@@ -114,7 +117,7 @@ export async function POST(request: Request) {
 
         // Get account ID from configuration (first in array)
         const accountId = TRADING_CONFIG.getDefaultAccountId();
-        console.log('Account ID:', accountId, '(100K Account)');
+        console.log('Account ID:', accountId, '(Leader Account)');
 
         // Get session token
         const username = process.env.NEXT_PUBLIC_USERNAME;
@@ -129,6 +132,13 @@ export async function POST(request: Request) {
         }
 
         const sessionToken = await authService.getSessionToken(username, apiKey);
+
+        /* 
+        // NOTE: 
+        FROM HERE ON DOWN TO THE CATCH BLOCK, THIS IS WHERE LETS SAY I HAD AN ACCOUNT ON 
+        THE LIVE AND THE CHALLENGE ACCOUNT, I CAN DIFFERENTIATE BETWEEN THE TWO AND PLACE 
+        DIFFERENT TRADES ON DIFFERENT ACCOUNTS.
+        */
 
         // 🔥 3. Build the trade object
         const trade: Trade = {
@@ -167,6 +177,7 @@ export async function POST(request: Request) {
                 trade: trade,
                 result: result
             });
+            
         } else {
             console.error("❌ Unknown trade action:", actionKey);
             return NextResponse.json({ 
