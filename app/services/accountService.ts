@@ -255,6 +255,11 @@ class AccountService {
     try {
       console.log(`Opening LONG position for account ${accountId}, contract ${contractId}, size ${size}...`);
 
+      // 🟢 This is the correct way to do it
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 8);
+      const uniqueTag = `Auto_Long_${timestamp}_${randomId}`;
+
       const response = await fetch(`${this.baseUrl}/Order/place`, {
         method: 'POST',
         headers: {
@@ -268,7 +273,11 @@ class AccountService {
           type: 2, // Market order
           side: 0, // Bid (Buy)
           size: size,
-          customTag: 'Auto Long Position'
+          // 🛑 Custom tag before that was causing this error
+          // customTag: 'Auto Long Position'
+
+          // 🟢 This is the correct way to do it
+          customTag: uniqueTag
         })
       });
 
@@ -298,6 +307,11 @@ class AccountService {
     try {
       console.log(`Opening SHORT position for account ${accountId}, contract ${contractId}, size ${size}...`);
 
+      // 🟢 This is the correct way to do it
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 8);
+      const uniqueTag = `Auto_Short_${timestamp}_${randomId}`;
+
       const response = await fetch(`${this.baseUrl}/Order/place`, {
         method: 'POST',
         headers: {
@@ -311,7 +325,11 @@ class AccountService {
           type: 2, // Market order
           side: 1, // Ask (Sell)
           size: size,
-          customTag: 'Auto Short Position'
+          // 🛑 Custom tag before that was causing this error
+          // customTag: 'Auto Short Position'
+
+          // 🟢 This is the correct way to do it
+          customTag: uniqueTag
         })
       });
 
