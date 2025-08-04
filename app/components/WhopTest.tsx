@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { colors } from '../colors';
 
 export default function WhopTest() {
-  const [experienceId, setExperienceId] = useState<string>('exp_XXXXXXXX');
-  const [message, setMessage] = useState<string>('Test message from Momentum Trading Bot');
+  // const [experienceId, setExperienceId] = useState<string>('exp_XXXXXXXX');
+  // const [message, setMessage] = useState<string>('Test message from Momentum Trading Bot');
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -98,6 +98,9 @@ export default function WhopTest() {
     try {
       const res = await sendToGeneralChat(payload);
       const res2 = await sendToDegenChat(payload);
+
+      console.log('General Chat Response:', res);
+      console.log('Degen Chat Response:', res2);
 
       return {
         status: 'ok',

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import dotenv from 'dotenv';
 import { accountService } from '../../services/accountService';
 import { authService } from '../../services/authService';
-import { sendSignalsToWhopChats } from '../../services/whopServices';
+// import { sendSignalsToWhopChats } from '../../services/whopServices';
 
 dotenv.config();
 
