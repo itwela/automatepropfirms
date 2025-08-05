@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import {useState } from 'react';
 import { colors } from '../colors';
 
 export default function RouteTest() {

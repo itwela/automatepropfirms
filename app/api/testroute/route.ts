@@ -2,12 +2,17 @@ import { NextResponse } from 'next/server';
 
 
 const accountIds = [
-    // 100 K [ X--F--A ] Leader Account
+    0,
 ]
 
 export async function POST(request: Request) {
 
+    const accountId = accountIds[0];
+
     return NextResponse.json({ 
+        request: request,
+        result: 'success',
+        accountId: accountId,
     });
 
 }
