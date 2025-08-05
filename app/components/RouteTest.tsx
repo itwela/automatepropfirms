@@ -3,12 +3,17 @@
 import {useState } from 'react';
 import { colors } from '../colors';
 
+interface AccountData {
+  accountIds: number[];
+  accountId: number;
+}
+
 export default function RouteTest() {
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [accountData, setAccountData] = useState<any>(null);
+  const [accountData, setAccountData] = useState<AccountData | null>(null);
 
-  const fetchRouteData = async () => {
+  const fetchRouteData = async (): Promise<AccountData> => {
     try {
       const response = await fetch('/api/testroute', {
         method: 'POST',
@@ -21,7 +26,7 @@ export default function RouteTest() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: AccountData = await response.json();
       return data;
     } catch (error) {
       console.error('Error fetching route data:', error);
@@ -82,20 +87,20 @@ export default function RouteTest() {
            <h3 style={{ color: colors.whightprimary }} className="text-lg font-semibold mb-3">
              Account Data
            </h3>
-           <div className="space-y-2">
-             <div className="flex justify-between items-center">
-               <span style={{ color: colors.whightprimary }} className="font-medium">Account IDs:</span>
-               <span style={{ color: colors.whightprimary }} className="text-blue-400">
-                 {Array.isArray(accountData.accountIds) ? accountData.accountIds.join(', ') : accountData.accountIds}
-               </span>
+                        <div className="space-y-2">
+               <div className="flex justify-between items-center">
+                 <span style={{ color: colors.whightprimary }} className="font-medium">Account IDs:</span>
+                 <span style={{ color: colors.whightprimary }} className="text-blue-400">
+                   {accountData.accountIds.join(', ')}
+                 </span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span style={{ color: colors.whightprimary }} className="font-medium">Primary Account ID:</span>
+                 <span style={{ color: colors.whightprimary }} className="text-green-400">
+                   {accountData.accountId}
+                 </span>
+               </div>
              </div>
-             <div className="flex justify-between items-center">
-               <span style={{ color: colors.whightprimary }} className="font-medium">Primary Account ID:</span>
-               <span style={{ color: colors.whightprimary }} className="text-green-400">
-                 {accountData.accountId}
-               </span>
-             </div>
-           </div>
            
            {/* Type Information */}
            <div className="mt-4 pt-4 border-t border-gray-600">
@@ -106,25 +111,25 @@ export default function RouteTest() {
                <div className="flex justify-between items-center">
                  <span style={{ color: colors.whightprimary }} className="font-medium">accountIds type:</span>
                  <span style={{ color: colors.whightprimary }} className="text-yellow-400">
-                   {Array.isArray(accountData.accountIds) ? 'Array' : typeof accountData.accountIds}
+                   Array of numbers
                  </span>
                </div>
                <div className="flex justify-between items-center">
                  <span style={{ color: colors.whightprimary }} className="font-medium">accountId type:</span>
                  <span style={{ color: colors.whightprimary }} className="text-yellow-400">
-                   {typeof accountData.accountId}
+                   number
                  </span>
                </div>
                <div className="flex justify-between items-center">
                  <span style={{ color: colors.whightprimary }} className="font-medium">accountIds length:</span>
                  <span style={{ color: colors.whightprimary }} className="text-purple-400">
-                   {Array.isArray(accountData.accountIds) ? accountData.accountIds.length : 'N/A'}
+                   {accountData.accountIds.length}
                  </span>
                </div>
                <div className="flex justify-between items-center">
-                 <span style={{ color: colors.whightprimary }} className="font-medium">Is accountIds array:</span>
+                 <span style={{ color: colors.whightprimary }} className="font-medium">TypeScript Interface:</span>
                  <span style={{ color: colors.whightprimary }} className="text-purple-400">
-                   {Array.isArray(accountData.accountIds) ? 'Yes' : 'No'}
+                   AccountData
                  </span>
                </div>
              </div>
