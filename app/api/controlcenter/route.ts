@@ -32,8 +32,9 @@ const TRADING_CONFIG = {
   
   // 🔥 Account IDs Array
   accountIds: [
-    10221267,   // 100 K [ X--F--A ] Leader Account
-],
+    // 100 K [ X--F--A ] Leader Account
+    Number(process.env.TOPSTEP_FIRST_XFA_100K_FUNDED_ACCOUNT_ID),
+  ],
   
   // Helper function to get quantity for a symbol
   getQuantity: (symbol: string): number => {

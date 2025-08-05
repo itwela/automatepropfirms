@@ -4,13 +4,14 @@ import { motion } from "framer-motion";
 import { colors } from "./colors";
 import TradingTest from "./components/TradingTest";
 import WhopTest from "./components/WhopTest";
+import RouteTest from "./components/RouteTest";
 import { Dashboard } from "./components/Dashboard";
 import { useState, useEffect } from "react";
 import { authService } from "./services/authService";
 
 export default function Home() {
   const currentYear = new Date().getFullYear();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'trading' | 'whop'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'trading' | 'whop' | 'route'>('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -196,6 +197,16 @@ export default function Home() {
           >
             Whop Test
           </button>
+          <button
+            onClick={() => setActiveTab('route')}
+            className={`px-6 py-3 font-medium rounded-lg transition-colors ${
+              activeTab === 'route'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            Route Test
+          </button>
         </div>
       </div>
 
@@ -204,6 +215,7 @@ export default function Home() {
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'trading' && <TradingTest />}
         {activeTab === 'whop' && <WhopTest />}
+        {activeTab === 'route' && <RouteTest />}
       </main>
 
       {/* Footer */}
