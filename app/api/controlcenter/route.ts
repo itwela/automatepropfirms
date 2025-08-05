@@ -32,8 +32,7 @@ const TRADING_CONFIG = {
   
   // 🔥 Account IDs Array
   accountIds: [
-    10173792,   // 100k Funded Challenge Leader Account
-    // 9380393,   // 100k Funded Challenge - Currently Disabled - 3 DOLLARS FROM PASSING :D
+    10221267,   // 100 K [ X--F--A ] Leader Account
 ],
   
   // Helper function to get quantity for a symbol
