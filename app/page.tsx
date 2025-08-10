@@ -18,15 +18,42 @@ export default function Home() {
   const [passwordError, setPasswordError] = useState('');
 
   // Load authentication and account ID on component mount
+
+  // i have clients now, i need this to authenticate multiple clients now not just me
   useEffect(() => {
     const loadAuth = async () => {
       try {
-        const username = process.env.NEXT_PUBLIC_USERNAME;
-        const apiKey = process.env.NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY;
-        // Only used for REST, not for SignalR anymore
-        if (username && apiKey) {
-          await authService.getSessionToken(username, apiKey);
+        // Load multiple clients from environment variables
+        // You can add more clients by creating additional env vars like:
+        // NEXT_PUBLIC_CLIENT1_USERNAME, NEXT_PUBLIC_CLIENT1_API_KEY
+        // NEXT_PUBLIC_CLIENT2_USERNAME, NEXT_PUBLIC_CLIENT2_API_KEY
+        // etc.
+        
+        const twezoUsername = process.env.NEXT_PUBLIC_USERNAME;
+        const twezoAPIKey = process.env.NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY;
+        
+        if (twezoUsername && twezoAPIKey) {
+          // Authenticate default client
+          await authService.getSessionToken(twezoUsername, twezoAPIKey, 'master');
+          console.log('✅ Default client authenticated');
         }
+
+        // Example: Load additional clients if you have them configured
+        const krisUsername = process.env.NEXT_PUBLIC_KRIS_USERNAME;
+        const krisAPIKey = process.env.NEXT_PUBLIC_KRIS_API_KEY;
+
+        if (krisUsername && krisAPIKey) {
+          await authService.getSessionToken(krisUsername, krisAPIKey, 'client-1');
+          console.log('✅ Kris authenticated');
+        }
+
+        // const client2Username = process.env.NEXT_PUBLIC_CLIENT2_USERNAME;
+        // const client2ApiKey = process.env.NEXT_PUBLIC_CLIENT2_API_KEY;
+        // if (client2Username && client2ApiKey) {
+        //   await authService.getSessionToken(client2Username, client2ApiKey, 'client2');
+        //   console.log('✅ Client 2 authenticated');
+        // }
+
       } catch (error) {
         console.error('Failed to load authentication:', error);
       } finally {

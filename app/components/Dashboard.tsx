@@ -17,15 +17,133 @@ export const Dashboard: React.FC = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [nextRefreshTime, setNextRefreshTime] = useState<Date | null>(null);
   const [closingPositionId, setClosingPositionId] = useState<number | null>(null);
+  
+  // Multi-client state
+  const [clients, setClients] = useState<Array<{
+    id: string;
+    name: string;
+    username: string;
+    isAuthenticated: boolean;
+    tokenExpiry: Date | null;
+    timeUntilExpiry: number;
+  }>>([]);
+  const [selectedClient, setSelectedClient] = useState<string>('master');
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
 
   const addLog = (message: string) => {
     console.log(`[Dashboard] ${message}`);
   };
 
-  // Load accounts on component mount
+  const loadClients = async () => {
+    setIsLoadingClients(true);
+    
+    // Minimum 1 second loading duration for client loading
+    const minLoadingTime = 1000; // 1 second
+    const startTime = Date.now();
+    
+    try {
+      addLog('Loading client sessions...');
+      
+      // Get all configured clients from environment variables
+      const clientConfigs = [
+        {
+          id: 'master',
+          name: 'Twezo',
+          username: process.env.NEXT_PUBLIC_USERNAME,
+          apiKey: process.env.NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY,
+        },
+        {
+          id: 'client-1',
+          name: 'Kris',
+          username: process.env.NEXT_PUBLIC_KRIS_USERNAME,
+          apiKey: process.env.NEXT_PUBLIC_KRIS_API_KEY,
+        },
+        // Add more clients here as needed
+        // {
+        //   id: 'client-2', 
+        //   name: 'Client 2',
+        //   username: process.env.NEXT_PUBLIC_CLIENT2_USERNAME,
+        //   apiKey: process.env.NEXT_PUBLIC_CLIENT2_API_KEY,
+        // },
+      ];
+
+      const clientSessions = clientConfigs
+        .filter(config => config.username && config.apiKey)
+        .map(config => ({
+          id: config.id,
+          name: config.name,
+          username: config.username!,
+          isAuthenticated: authService.isTokenValid(config.id),
+          tokenExpiry: authService.getTokenExpiry(config.id),
+          timeUntilExpiry: authService.getTimeUntilExpiry(config.id),
+        }));
+
+      setClients(clientSessions);
+      addLog(`Found ${clientSessions.length} configured clients`);
+      
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    } finally {
+      // Ensure loading state lasts at least 1 second
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+      
+      if (remainingTime > 0) {
+        setTimeout(() => {
+          setIsLoadingClients(false);
+        }, remainingTime);
+      } else {
+        setIsLoadingClients(false);
+      }
+    }
+  };
+
+  // Load clients and accounts on component mount
   useEffect(() => {
-    loadAccounts();
+    loadClients();
   }, []);
+
+  // Load accounts when selected client changes
+  useEffect(() => {
+    if (selectedClient) {
+      // Clear previous client's data when switching
+      clearSelectedAccount();
+      setAccounts([]);
+      setError(null);
+      
+      // Set loading state immediately
+      setIsLoadingAccounts(true);
+      
+      // Minimum 1 second loading duration for smooth transitions
+      const minLoadingTime = 1000; // 1 second
+      const startTime = Date.now();
+      
+      const loadAccountsWithMinDuration = async () => {
+        try {
+          await loadAccounts();
+        } finally {
+          // Ensure loading state lasts at least 1 second
+          const elapsedTime = Date.now() - startTime;
+          const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+          
+          if (remainingTime > 0) {
+            setTimeout(() => {
+              setIsLoadingAccounts(false);
+            }, remainingTime);
+          } else {
+            setIsLoadingAccounts(false);
+          }
+        }
+      };
+      
+      // Start loading after small delay
+      const timer = setTimeout(() => {
+        loadAccountsWithMinDuration();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [selectedClient]);
 
   // Auto-refresh positions every 5 minutes when an account is selected
   useEffect(() => {
@@ -55,51 +173,70 @@ export const Dashboard: React.FC = () => {
   }, [selectedAccount]);
 
   const loadAccounts = async () => {
-    setIsLoadingAccounts(true);
+    // Note: Loading state is managed by the caller for minimum duration
     setError(null);
     
     try {
-      addLog('Loading accounts...');
+      addLog(`Loading accounts for client: ${selectedClient}`);
       
-      // Get credentials from environment variables
-      const envUsername = process.env.NEXT_PUBLIC_USERNAME;
-      const envApiKey = process.env.NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY;
+      // Get credentials for selected client from environment
+      let clientUsername: string;
+      let clientApiKey: string;
       
-      if (!envUsername || !envApiKey) {
-        throw new Error('Username and API key must be configured in environment variables');
+      switch (selectedClient) {
+        case 'master':
+          clientUsername = process.env.NEXT_PUBLIC_USERNAME || '';
+          clientApiKey = process.env.NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY || '';
+          break;
+        case 'client-1':
+          clientUsername = process.env.NEXT_PUBLIC_KRIS_USERNAME || '';
+          clientApiKey = process.env.NEXT_PUBLIC_KRIS_API_KEY || '';
+          break;
+        case 'client-2':
+          clientUsername = process.env.NEXT_PUBLIC_CLIENT2_USERNAME || '';
+          clientApiKey = process.env.NEXT_PUBLIC_CLIENT2_API_KEY || '';
+          break;
+        default:
+          throw new Error(`Unknown client: ${selectedClient}`);
       }
       
-      setUserName(envUsername);
-      setApiKey(envApiKey);
+      if (!clientUsername || !clientApiKey) {
+        throw new Error(`Credentials not configured for client: ${selectedClient}`);
+      }
       
-      // Get session token
-      const sessionToken = await authService.getSessionToken(envUsername, envApiKey);
+      setUserName(clientUsername);
+      setApiKey('***'); // Don't store API key in state for security
+      
+      // Get session token for selected client
+      const sessionToken = await authService.getSessionToken(clientUsername, clientApiKey, selectedClient);
       
       // Search for accounts
       const foundAccounts = await accountService.searchAccounts(sessionToken, true);
       
-      addLog(`Found ${foundAccounts.length} accounts`);
+      addLog(`Found ${foundAccounts.length} accounts for client ${selectedClient}`);
       setAccounts(foundAccounts);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setError(`Failed to load accounts: ${errorMessage}`);
       addLog(`Error loading accounts: ${errorMessage}`);
-    } finally {
-      setIsLoadingAccounts(false);
     }
+    // Note: Loading state is managed by the caller for minimum duration
   };
 
   const loadPositions = async (account: AccountInfo) => {
-    setIsLoadingPositions(true);
+    // Note: Loading state is managed by the caller for minimum duration
     setPositionsError(null);
     setPositions([]);
     
     try {
-      addLog(`Loading positions for account ${account.id}...`);
+      addLog(`Loading positions for account ${account.id} (client: ${selectedClient})...`);
 
-      // Get session token
-      const sessionToken = await authService.getSessionToken(userName, apiKey);
+      // Get session token for selected client
+      const sessionToken = await authService.getCurrentToken(selectedClient);
+      if (!sessionToken) {
+        throw new Error(`No valid session token for client: ${selectedClient}`);
+      }
       
       // Search for open positions
       const foundPositions = await accountService.searchOpenPositions(sessionToken, account.id);
@@ -112,9 +249,8 @@ export const Dashboard: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setPositionsError(`Failed to load positions: ${errorMessage}`);
       addLog(`Error loading positions: ${errorMessage}`);
-    } finally {
-      setIsLoadingPositions(false);
     }
+    // Note: Loading state is managed by the caller for minimum duration
   };
 
   const closePosition = async (position: Position) => {
@@ -123,10 +259,13 @@ export const Dashboard: React.FC = () => {
     setClosingPositionId(position.id);
     
     try {
-      addLog(`Closing position ${position.id} for contract ${position.contractId}...`);
+      addLog(`Closing position ${position.id} for contract ${position.contractId} (client: ${selectedClient})...`);
 
-      // Get session token
-      const sessionToken = await authService.getSessionToken(userName, apiKey);
+      // Get session token for selected client
+      const sessionToken = await authService.getCurrentToken(selectedClient);
+      if (!sessionToken) {
+        throw new Error(`No valid session token for client: ${selectedClient}`);
+      }
       
       // Close the position
       await accountService.closePosition(sessionToken, selectedAccount.id, position.contractId);
@@ -147,13 +286,39 @@ export const Dashboard: React.FC = () => {
 
   const handleAccountSelect = (account: AccountInfo) => {
     setSelectedAccount(account);
-    loadPositions(account);
+    
+    // Minimum 1 second loading duration for positions
+    const minLoadingTime = 1000; // 1 second
+    const startTime = Date.now();
+    
+    const loadPositionsWithMinDuration = async () => {
+      try {
+        await loadPositions(account);
+      } finally {
+        // Ensure loading state lasts at least 1 second
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+        
+        if (remainingTime > 0) {
+          setTimeout(() => {
+            setIsLoadingPositions(false);
+          }, remainingTime);
+        } else {
+          setIsLoadingPositions(false);
+        }
+      }
+    };
+    
+    loadPositionsWithMinDuration();
   };
 
   const clearSelectedAccount = () => {
     setSelectedAccount(null);
     setPositions([]);
     setPositionsError(null);
+    setLastRefreshTime(null);
+    setNextRefreshTime(null);
+    setClosingPositionId(null);
   };
 
   // Helper function to format currency
@@ -192,9 +357,94 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Log username and api key to console soi can build
+  useEffect(() => {
+    console.log('username', userName);
+    console.log('apiKey', apiKey);
+  }, [userName, apiKey]);
+
   return (
     <div className="p-6 bg-gray-900 text-white rounded-lg max-w-6xl mx-auto">
       <h2 className="text-2xl font-bold mb-6">Trading Dashboard</h2>
+      
+      {/* Client Selection */}
+      {!isLoadingClients && clients.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Select Client</h3>
+            <button
+              onClick={loadClients}
+              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+            >
+              Refresh Sessions
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {clients.map((client) => (
+              <div 
+                key={client.id} 
+                className={`p-4 rounded border transition-colors cursor-pointer ${
+                  selectedClient === client.id
+                    ? 'bg-blue-900 border-blue-600'
+                    : 'bg-gray-800 border-gray-600 hover:bg-gray-700'
+                }`}
+                onClick={() => {
+                  if (selectedClient !== client.id) {
+                    // Show loading state immediately when switching
+                    setIsLoadingAccounts(true);
+                    setSelectedClient(client.id);
+                  }
+                }}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 className="font-semibold text-lg">{client.name}</h4>
+                    <p className="text-gray-400 text-sm">{client.username}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedClient === client.id && isLoadingAccounts && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                    )}
+                    <div className={`px-2 py-1 rounded text-xs font-medium ${
+                      client.isAuthenticated 
+                        ? 'bg-green-900 text-green-300' 
+                        : 'bg-red-900 text-red-300'
+                    }`}>
+                      {client.isAuthenticated ? 'Active' : 'Inactive'}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-400">
+                  {client.isAuthenticated ? (
+                    <div>
+                      <div>Expires: {client.tokenExpiry?.toLocaleTimeString()}</div>
+                      <div>Time left: {Math.floor(client.timeUntilExpiry / (1000 * 60))}m</div>
+                    </div>
+                  ) : (
+                    <div>Not authenticated</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Client Loading State */}
+      {isLoadingClients && (
+        <div className="mb-6 p-4 bg-blue-800 rounded text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+          <p>Loading client sessions...</p>
+        </div>
+      )}
+
+      {/* Account Loading State */}
+      {isLoadingAccounts && (
+        <div className="mb-6 p-4 bg-blue-800 rounded text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+          <p>Loading accounts for {clients.find(c => c.id === selectedClient)?.name || 'selected client'}...</p>
+        </div>
+      )}
       
       {/* Error Display */}
       {error && (
@@ -221,7 +471,9 @@ export const Dashboard: React.FC = () => {
       {/* Account Selection */}
       {!isLoadingAccounts && !error && accounts.length > 0 && !selectedAccount && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">Select an Account</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Select an Account - {clients.find(c => c.id === selectedClient)?.name || selectedClient}
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {accounts
               .sort((a, b) => b.id - a.id)
@@ -255,6 +507,23 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* No Account Selected Message */}
+      {!selectedAccount && accounts.length > 0 && (
+        <div className="mb-6 p-6 bg-gray-800 rounded border border-gray-600 text-center">
+          <div className="text-gray-400 mb-2">
+            <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-300 mb-2">
+            Select an Account to View Dashboard
+          </h3>
+          <p className="text-gray-400 text-sm">
+            Click on any account above to view its trading dashboard and positions
+          </p>
+        </div>
+      )}
+
       {/* Selected Account Dashboard */}
       {selectedAccount && (
         <div className="space-y-6">
@@ -264,7 +533,9 @@ export const Dashboard: React.FC = () => {
               <h3 className="text-xl font-bold text-blue-200">
                 Account {selectedAccount.id} - {selectedAccount.name}
               </h3>
-              <p className="text-blue-300">Trading Dashboard</p>
+              <p className="text-blue-300">
+                Trading Dashboard - {clients.find(c => c.id === selectedClient)?.name || selectedClient}
+              </p>
             </div>
             <button
               onClick={clearSelectedAccount}
@@ -301,7 +572,33 @@ export const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between p-4 border-b border-gray-600">
               <h3 className="text-lg font-semibold">Open Positions</h3>
               <button
-                onClick={() => loadPositions(selectedAccount)}
+                onClick={() => {
+                  if (selectedAccount) {
+                    // Minimum 1 second loading duration for manual refresh
+                    const minLoadingTime = 1000; // 1 second
+                    const startTime = Date.now();
+                    
+                    const loadPositionsWithMinDuration = async () => {
+                      try {
+                        await loadPositions(selectedAccount);
+                      } finally {
+                        // Ensure loading state lasts at least 1 second
+                        const elapsedTime = Date.now() - startTime;
+                        const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+                        
+                        if (remainingTime > 0) {
+                          setTimeout(() => {
+                            setIsLoadingPositions(false);
+                          }, remainingTime);
+                        } else {
+                          setIsLoadingPositions(false);
+                        }
+                      }
+                    };
+                    
+                    loadPositionsWithMinDuration();
+                  }
+                }}
                 disabled={isLoadingPositions}
                 className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
               >

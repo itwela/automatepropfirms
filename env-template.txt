@@ -8,7 +8,6 @@ NEXT_PUBLIC_USERNAME=your_username_here
 NEXT_PUBLIC_PROJECTX_TOPSTEP_API_KEY=S28aUTxGRKCVxzfEoKkXpAmZd1Z7WLJ50kOUC6UuPng=
 
 # Account ID (will be discovered using the app)
-NEXT_PUBLIC_ACCOUNT_ID=123
 
 # Trading Strategy Configuration
 NEXT_PUBLIC_MA_LENGTH=6

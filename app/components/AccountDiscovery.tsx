@@ -455,13 +455,6 @@ export const AccountDiscovery: React.FC = () => {
           {!selectedAccount && (
             <div className="mt-4 p-3 bg-blue-800 rounded">
               <h4 className="font-semibold mb-2">Next Steps:</h4>
-              <p className="text-sm">
-                1. Click on an account above to view its positions<br/>
-                2. Copy one of the Account IDs above<br/>
-                3. Update your .env.local file with: NEXT_PUBLIC_ACCOUNT_ID=YOUR_ACCOUNT_ID<br/>
-                4. Add your username: NEXT_PUBLIC_USERNAME=YOUR_USERNAME<br/>
-                5. Restart the application
-              </p>
             </div>
           )}
         </div>

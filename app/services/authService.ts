@@ -19,11 +19,17 @@ export interface ValidateResponse {
 }
 
 class AuthService {
-  private sessionToken: string | null = null;
-  private tokenExpiry: number | null = null;
-  private userName: string | null = null;
-  private apiKey: string | null = null;
-  private isValidating: boolean = false;
+  // Support multiple concurrent sessions keyed by client identifier (defaults to userName)
+  private sessions: Map<string, {
+    token: string | null;
+    tokenExpiry: number | null;
+    userName: string;
+    apiKey: string;
+    isValidating: boolean;
+  }> = new Map();
+
+  // For backward compatibility with legacy single-session usage
+  private defaultClientKey: string | null = null;
   private autoValidationInterval: NodeJS.Timeout | null = null;
 
   constructor() {
@@ -40,18 +46,33 @@ class AuthService {
 
     // Run validation every 12 hours (half of the 24-hour expiry)
     this.autoValidationInterval = setInterval(async () => {
-      if (this.sessionToken && this.userName && this.apiKey) {
-        try {
-          console.log('Running automatic session validation...');
-          const isValid = await this.validateSession();
-          if (isValid) {
-            console.log('Automatic validation successful');
-          } else {
-            console.log('Automatic validation failed, will re-authenticate on next request');
+      try {
+        const validationPromises: Array<Promise<void>> = [];
+        for (const [clientKey, record] of this.sessions.entries()) {
+          if (record.token && !record.isValidating) {
+            validationPromises.push(
+              (async () => {
+                try {
+                  const ok = await this.validateSession(clientKey);
+                  if (ok) {
+                    // Extend expiry on successful validation
+                    const current = this.sessions.get(clientKey);
+                    if (current) {
+                      current.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
+                      this.sessions.set(clientKey, current);
+                    }
+                  }
+                } catch (err) {
+                  console.error(`Automatic validation error for ${clientKey}:`, err);
+                }
+              })()
+            );
           }
-        } catch (error) {
-          console.error('Automatic validation error:', error);
         }
+        // Validate all in parallel
+        await Promise.all(validationPromises);
+      } catch (error) {
+        console.error('Automatic validation sweep error:', error);
       }
     }, 12 * 60 * 60 * 1000); // 12 hours
   }
@@ -65,56 +86,81 @@ class AuthService {
   }
 
   // Get session token (either from cache, validate existing, or authenticate)
-  async getSessionToken(userName: string, apiKey: string): Promise<string> {
-    // Store credentials for revalidation
-    this.userName = userName;
-    this.apiKey = apiKey;
+  async getSessionToken(userName: string, apiKey: string, clientId?: string): Promise<string> {
+    const clientKey = (clientId ?? userName).trim();
+    if (!clientKey) {
+      throw new Error('clientId or userName must be provided');
+    }
 
-    // Check if we have a cached token
-    if (this.sessionToken && this.tokenExpiry) {
-      // If token is still valid, return it
-      if (Date.now() < this.tokenExpiry) {
-        return this.sessionToken;
+    // Set default key for backward compatibility
+    this.defaultClientKey = clientKey;
+
+    // Ensure a session record exists
+    if (!this.sessions.has(clientKey)) {
+      this.sessions.set(clientKey, {
+        token: null,
+        tokenExpiry: null,
+        userName,
+        apiKey,
+        isValidating: false,
+      });
+    } else {
+      // Keep latest credentials in case they changed
+      const existing = this.sessions.get(clientKey)!;
+      existing.userName = userName;
+      existing.apiKey = apiKey;
+      this.sessions.set(clientKey, existing);
+    }
+
+    const record = this.sessions.get(clientKey)!;
+
+    // If we have a cached token
+    if (record.token && record.tokenExpiry) {
+      if (Date.now() < record.tokenExpiry) {
+        return record.token;
       }
-      
-      // If token is expired but we have credentials, try to validate it first
-      if (this.userName && this.apiKey) {
-        try {
-          console.log('Token expired, attempting to validate existing token...');
-          const isValid = await this.validateSession();
-          if (isValid) {
-            // Update expiry time after successful validation
-            this.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-            console.log('Token validation successful, extending expiry');
-            return this.sessionToken;
-          }
-        } catch (error) {
-          console.log('Token validation failed, will re-authenticate:', error);
+      // Try to validate expired token first
+      try {
+        console.log(`[${clientKey}] Token expired, attempting validation...`);
+        const isValid = await this.validateSession(clientKey);
+        if (isValid) {
+          const updated = this.sessions.get(clientKey)!;
+          updated.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000);
+          this.sessions.set(clientKey, updated);
+          console.log(`[${clientKey}] Validation successful, extending expiry`);
+          return updated.token!;
         }
+      } catch (error) {
+        console.log(`[${clientKey}] Token validation failed, re-authenticating:`, error);
       }
     }
 
-    // If no valid token, authenticate to get new token
-    return this.authenticate(userName, apiKey);
+    // Authenticate to get a new token
+    return this.authenticateForKey(clientKey, userName, apiKey);
   }
 
   // Validate existing session token
-  async validateSession(): Promise<boolean> {
-    if (!this.sessionToken || this.isValidating) {
+  async validateSession(clientId?: string): Promise<boolean> {
+    const clientKey = clientId ?? this.defaultClientKey;
+    if (!clientKey) return false;
+
+    const record = this.sessions.get(clientKey);
+    if (!record || !record.token || record.isValidating) {
       return false;
     }
 
-    this.isValidating = true;
+    record.isValidating = true;
+    this.sessions.set(clientKey, record);
 
     try {
-      console.log('Validating session token...');
+      console.log(`[${clientKey}] Validating session token...`);
 
       const response = await fetch('https://api.topstepx.com/api/Auth/validate', {
         method: 'POST',
         headers: {
           'accept': 'text/plain',
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.sessionToken}`
+          'Authorization': `Bearer ${record.token}`
         }
       });
 
@@ -123,31 +169,38 @@ class AuthService {
       }
 
       const data: ValidateResponse = await response.json();
-      
-      console.log('Session validation response:', data);
+      console.log(`[${clientKey}] Session validation response:`, data);
 
       if (!data.success || data.errorCode !== 0) {
         throw new Error(data.errorMessage || 'Session validation failed');
       }
 
-      console.log('Session token is still valid');
+      console.log(`[${clientKey}] Session token is still valid`);
       return true;
 
     } catch (error) {
-      console.error('Session validation error:', error);
-      // Clear invalid token
-      this.sessionToken = null;
-      this.tokenExpiry = null;
+      console.error(`[${clientKey}] Session validation error:`, error);
+      // Clear invalid token for this session
+      const updated = this.sessions.get(clientKey);
+      if (updated) {
+        updated.token = null;
+        updated.tokenExpiry = null;
+        this.sessions.set(clientKey, updated);
+      }
       return false;
     } finally {
-      this.isValidating = false;
+      const updated = this.sessions.get(clientKey);
+      if (updated) {
+        updated.isValidating = false;
+        this.sessions.set(clientKey, updated);
+      }
     }
   }
 
   // Authenticate with the API
-  private async authenticate(userName: string, apiKey: string): Promise<string> {
+  private async authenticateForKey(clientKey: string, userName: string, apiKey: string): Promise<string> {
     try {
-      console.log('Authenticating with ProjectX TopStep API...');
+      console.log(`[${clientKey}] Authenticating with ProjectX TopStep API...`);
 
       const response = await fetch('https://api.topstepx.com/api/Auth/loginKey', {
         method: 'POST',
@@ -166,75 +219,98 @@ class AuthService {
       }
 
       const data: AuthResponse = await response.json();
-      
-      console.log('Authentication response:', data);
+      console.log(`[${clientKey}] Authentication response:`, data);
 
       if (!data.success || data.errorCode !== 0) {
         throw new Error(data.errorMessage || 'Authentication failed');
       }
 
       // Store the session token and set expiry (tokens typically last 24 hours)
-      this.sessionToken = data.token;
-      this.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+      const record = this.sessions.get(clientKey) ?? {
+        token: null,
+        tokenExpiry: null,
+        userName,
+        apiKey,
+        isValidating: false,
+      };
+      record.token = data.token;
+      record.tokenExpiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+      record.userName = userName;
+      record.apiKey = apiKey;
+      this.sessions.set(clientKey, record);
 
-      console.log('Successfully authenticated with ProjectX TopStep API');
+      console.log(`[${clientKey}] Successfully authenticated with ProjectX TopStep API`);
       return data.token;
 
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error(`[${clientKey}] Authentication error:`, error);
       throw error;
     }
   }
 
   // Force revalidation of current token
-  async revalidateSession(): Promise<boolean> {
-    if (!this.userName || !this.apiKey) {
-      throw new Error('No credentials available for revalidation');
-    }
+  async revalidateSession(clientId?: string): Promise<boolean> {
+    const clientKey = clientId ?? this.defaultClientKey;
+    if (!clientKey) throw new Error('No client specified for revalidation');
 
-    console.log('Force revalidating session...');
-    
-    // Clear current token and re-authenticate
-    this.sessionToken = null;
-    this.tokenExpiry = null;
+    const record = this.sessions.get(clientKey);
+    if (!record) throw new Error('No credentials available for revalidation');
+
+    console.log(`[${clientKey}] Force revalidating session...`);
+    record.token = null;
+    record.tokenExpiry = null;
+    this.sessions.set(clientKey, record);
     
     try {
-      await this.authenticate(this.userName, this.apiKey);
+      await this.authenticateForKey(clientKey, record.userName, record.apiKey);
       return true;
     } catch (error) {
-      console.error('Revalidation failed:', error);
+      console.error(`[${clientKey}] Revalidation failed:`, error);
       return false;
     }
   }
 
   // Clear cached token
-  clearToken(): void {
-    this.sessionToken = null;
-    this.tokenExpiry = null;
-    this.userName = null;
-    this.apiKey = null;
-    this.stopAutoValidation();
+  clearToken(clientId?: string): void {
+    if (clientId) {
+      this.sessions.delete(clientId);
+      if (this.defaultClientKey === clientId) this.defaultClientKey = null;
+    } else {
+      this.sessions.clear();
+      this.defaultClientKey = null;
+    }
   }
 
   // Get current token (without authentication)
-  getCurrentToken(): string | null {
-    return this.sessionToken;
+  getCurrentToken(clientId?: string): string | null {
+    const clientKey = clientId ?? this.defaultClientKey;
+    if (!clientKey) return null;
+    return this.sessions.get(clientKey)?.token ?? null;
   }
 
   // Check if token is valid
-  isTokenValid(): boolean {
-    return !!(this.sessionToken && this.tokenExpiry && Date.now() < this.tokenExpiry);
+  isTokenValid(clientId?: string): boolean {
+    const clientKey = clientId ?? this.defaultClientKey;
+    if (!clientKey) return false;
+    const record = this.sessions.get(clientKey);
+    return !!(record && record.token && record.tokenExpiry && Date.now() < record.tokenExpiry);
   }
 
   // Get token expiry time
-  getTokenExpiry(): Date | null {
-    return this.tokenExpiry ? new Date(this.tokenExpiry) : null;
+  getTokenExpiry(clientId?: string): Date | null {
+    const clientKey = clientId ?? this.defaultClientKey;
+    if (!clientKey) return null;
+    const expiry = this.sessions.get(clientKey)?.tokenExpiry ?? null;
+    return expiry ? new Date(expiry) : null;
   }
 
   // Get time until token expires (in milliseconds)
-  getTimeUntilExpiry(): number {
-    if (!this.tokenExpiry) return 0;
-    return Math.max(0, this.tokenExpiry - Date.now());
+  getTimeUntilExpiry(clientId?: string): number {
+    const clientKey = clientId ?? this.defaultClientKey;
+    if (!clientKey) return 0;
+    const expiry = this.sessions.get(clientKey)?.tokenExpiry ?? null;
+    if (!expiry) return 0;
+    return Math.max(0, expiry - Date.now());
   }
 }
 

@@ -1,6 +1,9 @@
 // Backend Whop webhook services for server-side usage
 
-async function sendToGeneralChat_WHOP(payload: object) {
+interface payloadType {
+  content: string;
+}
+async function sendToGeneralChat_WHOP(payload: payloadType) {
   const generalChatUrl = process.env.NODE_ENV === 'production' ? process.env.WHOP_GENERAL_CHAT_URL : process.env.NEXT_PUBLIC_WHOP_GENERAL_CHAT_URL;
   
   if (!generalChatUrl) {
@@ -62,20 +65,44 @@ async function sendToDegenChat_WHOP(payload: object) {
   }
 }
 
-async function sendSignalsToWhopChats(payload: object) {
+async function sendToNQPremiumChat_WHOP(payload: payloadType) {
+
+  const nqPremiumChatUrl = process.env.NODE_ENV === 'production' ? process.env.WHOP_NQ_PREMIUM_CHAT_URL : process.env.NEXT_PUBLIC_WHOP_NQ_PREMIUM_CHAT_URL;
+  
+  if (!nqPremiumChatUrl) {
+    throw new Error('WHOP_NQ_PREMIUM_CHAT_URL environment variable not configured');
+  }
+
+  try {
+    const res = await fetch(nqPremiumChatUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log('res', res);
+
+  } catch (error) {
+    console.error('Error sending to nq premium chat:', error);
+    throw error;
+  }
+
+}
+
+async function sendSignalsToWhopChats(payload: payloadType) {
  
     try {
 
-        const [generalResult, degenResult] = await Promise.all([
-            sendToGeneralChat_WHOP(payload),
-            sendToDegenChat_WHOP(payload)
+        const [nqPremiumResult] = await Promise.all([
+            sendToNQPremiumChat_WHOP(payload)
         ]);
 
         return {
         status: 'ok',
         message: 'All messages sent successfully',
-        generalChat: generalResult,
-        degenChat: degenResult
+        nqPremiumChat: nqPremiumResult
         };
 
   } catch (error) {
@@ -96,5 +123,6 @@ export {
   sendToGeneralChat_WHOP,
   sendToDegenChat_WHOP,
   sendSignalsToWhopChats,
-  sendTestMessage
+  sendTestMessage,
+  sendToNQPremiumChat_WHOP
 };

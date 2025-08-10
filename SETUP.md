@@ -21,7 +21,6 @@ Create a `.env.local` file in the root directory with the following variables:
 ```env
 # SignalR Connection
 NEXT_PUBLIC_JWT_TOKEN=your_jwt_token_here
-NEXT_PUBLIC_ACCOUNT_ID=123
 
 # Trading Strategy Configuration
 NEXT_PUBLIC_MA_LENGTH=6
