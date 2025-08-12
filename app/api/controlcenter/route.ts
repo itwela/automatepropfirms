@@ -240,55 +240,56 @@ export async function POST(request: Request) {
                         });
                     }
                 } else {
+
                     sendToNQPremiumChat_WHOP({
                         content: side === "BUY" ? buyMessage : sellMessage,
                     });
-                }
+                    // 🔥 Store trade in Convex ONCE (not per account)
+                    const tradeId = await convex.mutation(api.trades.createTrade, {
+                        direction: tradeTemplate.direction,
+                        comment: tradeTemplate.comment,
+                        symbol: tradeTemplate.symbol,
+                        contractId: tradeTemplate.contractId,
+                        timeframe: tradeTemplate.timeframe,
+                        timeOfMessage: tradeTemplate.timeOfMessage,
+                        text: tradeTemplate.text,
+                        quantity: tradeTemplate.quantity,
+                        signalId: tradeTemplate.signalId,
+                        price: tradeTemplate.price
+                    });
+                    
+                    // 🔥 Store signal metadata in Convex ONCE
+                    const executedAccounts = results
+                        .filter((r: unknown) => (r as { success: boolean }).success)
+                        .map((r: unknown) => (r as { accountId: number }).accountId);
+                    const failedAccounts = results
+                        .filter((r: unknown) => !(r as { success: boolean }).success)
+                        .map((r: unknown) => (r as { accountId: number }).accountId);
+                    
+                    await convex.mutation(api.trades.upsertSignal, {
+                        signalId,
+                        direction,
+                        symbol,
+                        comment,
+                        timeframe,
+                        timeOfMessage: time_Of_Message,
+                        text,
+                        executedAccounts,
+                        failedAccounts,
+                    });
 
-                console.log('action', action);
-                console.log('Calculated P&L:', pnl);
+                    console.log('Trade ID:', tradeId);
+                    console.log('action', action);
+                    console.log('Calculated P&L:', pnl);
+
+                }
 
 
             }
-
-            // 🔥 Store trade in Convex ONCE (not per account)
-            const tradeId = await convex.mutation(api.trades.createTrade, {
-                direction: tradeTemplate.direction,
-                comment: tradeTemplate.comment,
-                symbol: tradeTemplate.symbol,
-                contractId: tradeTemplate.contractId,
-                timeframe: tradeTemplate.timeframe,
-                timeOfMessage: tradeTemplate.timeOfMessage,
-                text: tradeTemplate.text,
-                quantity: tradeTemplate.quantity,
-                signalId: tradeTemplate.signalId,
-                price: tradeTemplate.price
-            });
-            
-            // 🔥 Store signal metadata in Convex ONCE
-            const executedAccounts = results
-                .filter((r: unknown) => (r as { success: boolean }).success)
-                .map((r: unknown) => (r as { accountId: number }).accountId);
-            const failedAccounts = results
-                .filter((r: unknown) => !(r as { success: boolean }).success)
-                .map((r: unknown) => (r as { accountId: number }).accountId);
-            
-            await convex.mutation(api.trades.upsertSignal, {
-                signalId,
-                direction,
-                symbol,
-                comment,
-                timeframe,
-                timeOfMessage: time_Of_Message,
-                text,
-                executedAccounts,
-                failedAccounts,
-            });
             
             return NextResponse.json({ 
                 success: true, 
                 message: 'Trades executed successfully on all accounts',
-                tradeId: tradeId,
                 action: actionKey,
                 tradeTemplate: tradeTemplate,
                 results: results
