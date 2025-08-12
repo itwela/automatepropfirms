@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import dotenv from 'dotenv';
 import { accountService } from '../../services/accountService';
 import { authService } from '../../services/authService';
-import { sendToNQPremiumChat_WHOP } from '../../services/whopServices';
+// import { sendToNQPremiumChat_WHOP } from '../../services/whopServices';
 import { api } from '@/convex/_generated/api';
 
 dotenv.config();
@@ -194,10 +194,10 @@ export async function POST(request: Request) {
 
         // 🔥 4. Build super fast routing table (object literal) for single account (TWEZO only)
         const orderActions: Record<string, () => Promise<unknown>> = {
-            "buy_go_long": () => placeMarketOrder("buy", tradeTemplate, convex),
-            "sell_exit_long": () => closePosition("buy", tradeTemplate, convex),
-            "sell_go_short": () => placeMarketOrder("sell", tradeTemplate, convex),
-            "buy_exit_short": () => closePosition("sell", tradeTemplate, convex),
+            "buy_go_long": () => placeMarketOrder("buy", tradeTemplate),
+            "sell_exit_long": () => closePosition("buy", tradeTemplate),
+            "sell_go_short": () => placeMarketOrder("sell", tradeTemplate),
+            "buy_exit_short": () => closePosition("sell", tradeTemplate),
         };
 
         // 🔥 5. Run the appropriate handler on TWEZO account only
@@ -509,7 +509,8 @@ export async function POST(request: Request) {
 
 
 // 🔥 Ultra-fast order placement function using accountService (TWEZO only)
-async function placeMarketOrder(side: string, tradeTemplate: Omit<Trade, 'accountId' | 'sessionToken'>, convex: ConvexHttpClient) {
+async function placeMarketOrder(side: string, tradeTemplate: Omit<Trade, 'accountId' | 'sessionToken'>) {
+// async function placeMarketOrder(side: string, tradeTemplate: Omit<Trade, 'accountId' | 'sessionToken'>, convex: ConvexHttpClient) {
     console.log(`🟢 Placing ${side.toUpperCase()} market order for ${tradeTemplate.symbol} (${tradeTemplate.contractId}) on TWEZO's account`);
     
     try {
@@ -536,7 +537,8 @@ async function placeMarketOrder(side: string, tradeTemplate: Omit<Trade, 'accoun
 }
 
 // 🔥 Ultra-fast position closing function using accountService (TWEZO only)
-async function closePosition(side: string, tradeTemplate: Omit<Trade, 'accountId' | 'sessionToken'>, convex: ConvexHttpClient) {
+// async function closePosition(side: string, tradeTemplate: Omit<Trade, 'accountId' | 'sessionToken'>, convex: ConvexHttpClient) {
+async function closePosition(side: string, tradeTemplate: Omit<Trade, 'accountId' | 'sessionToken'>) {
     console.log(`🔴 Closing ${side.toUpperCase()} position for ${tradeTemplate.symbol} (${tradeTemplate.contractId}) on TWEZO's account`);
     
     try {
