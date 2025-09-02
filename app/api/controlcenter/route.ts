@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import { accountService } from '../../services/accountService';
 import { authService } from '../../services/authService';
 // import { sendToNQPremiumChat_WHOP } from '../../services/whopServices';
-import { api } from '@/convex/_generated/api';
 
 dotenv.config();
 
@@ -23,8 +22,8 @@ const SYMBOL_CONTRACT_MAP: Record<string, string> = {
 const SYMBOL_QUANTITY_CONFIG: Record<string, number> = {
   'XAGUSD': 2,  // 2 contracts for Silver
   'XAUUSD': 4,  // 4 contracts for Gold  
-  'NQ1!': 1, // 3 contracts for Nasdaq 100
-  'MNQ1!': 4, // 1 contract for Nasdaq 100 Micro
+  'NQ1!': 1, // 1 contract for Nasdaq 100
+  'MNQ1!': 4, // 4 contracts for Nasdaq 100 Micro
   'YM1!': 1, // 1 contract for S&P 500
   'XPTUSD': 1,   // 1 contract for Platinum
   'NGAS': 2,    // 2 contracts for Natural Gas
@@ -123,7 +122,7 @@ export async function POST(request: Request) {
 
     try {
 
-        const results: unknown[] = [];
+        // const results: unknown[] = [];
 
         // incoming payload from tradingview for signal
         const { 
@@ -204,54 +203,24 @@ export async function POST(request: Request) {
         if (orderActions[actionKey]) {
             console.log(`🚀 Executing action: ${actionKey} on TWEZO account`);
             const results = await orderActions[actionKey]();
-            console.log('✅ Trade executed successfully on TWEZO account:', results);       
+            console.log('✅ Trade executed successfully on TWEZO account:', results);
+            
+            // 🔥 Return immediately after successful execution
+            return NextResponse.json({ 
+                success: true, 
+                message: 'Trade executed successfully on TWEZO account',
+                action: actionKey,
+                tradeTemplate: tradeTemplate,
+                results: results
+            });
+            
         } else {
             console.error("❌ Unknown trade action:", actionKey);
             return NextResponse.json({ 
                 success: false, 
                 error: `Unknown trade action: ${actionKey}` 
             }, { status: 400 });
-        }
-
-        // 🔥 Store trade in Convex ONCE (TWEZO only)
-        const tradeId = await convex.mutation(api.trades.createTrade, {
-            direction: tradeTemplate.direction,
-            comment: tradeTemplate.comment,
-            symbol: tradeTemplate.symbol,
-            contractId: tradeTemplate.contractId,
-            timeframe: tradeTemplate.timeframe,
-            timeOfMessage: tradeTemplate.timeOfMessage,
-            text: tradeTemplate.text,
-            quantity: tradeTemplate.quantity,
-            signalId: tradeTemplate.signalId,
-            price: tradeTemplate.price
-        });
-        
-        // 🔥 Store signal metadata in Convex ONCE
-        const executedAccounts = [Number(process.env.TOPSTEP_FIRST_XFA_100K_FUNDED_ACCOUNT_ID)]; // TWEZO's account
-        const failedAccounts: number[] = []; // No failed accounts for now
-        
-        await convex.mutation(api.trades.upsertSignal, {
-            signalId,
-            direction,
-            symbol,
-            comment,
-            timeframe,
-            timeOfMessage: time_Of_Message,
-            text,
-            executedAccounts,
-            failedAccounts,
-        });
-
-        console.log('Trade ID:', tradeId);
-              
-        return NextResponse.json({ 
-            success: true, 
-            message: 'Trade executed successfully on TWEZO account',
-            action: actionKey,
-            tradeTemplate: tradeTemplate,
-            results: results
-        });      
+        }      
 
     } catch (error) {
         console.error('❌ Error processing trade:', error);
