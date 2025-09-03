@@ -36,10 +36,9 @@ export async function POST(request: Request) {
     }
 
     const payload = { content: messageContent };
-    let result;
 
     console.log('📤 Sending trading signal message to NQ Premium Chat');
-    result = await sendToNQPremiumChat_WHOP(payload);
+    const result = await sendToNQPremiumChat_WHOP(payload);
 
     console.log('✅ Message sent successfully:', result);
 
