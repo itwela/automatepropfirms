@@ -7,6 +7,14 @@ import { authService } from '../../services/authService';
 
 dotenv.config();
 
+// 🔥 Helper function to get Eastern Time (handles DST automatically)
+function getEasternTime(): Date {
+    const now = new Date();
+    // Use toLocaleString with timeZone to get proper Eastern Time including DST
+    const easternTimeString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+    return new Date(easternTimeString);
+}
+
 //  NOTE - ADD A SYMBOL TO CONTRACT MAP AND QUANTITY CONFIG HERE🔥 Symbol to Contract mapping
 const SYMBOL_CONTRACT_MAP: Record<string, string> = {
   'XAGUSD': 'CON.F.US.SIL.N25',
@@ -135,9 +143,11 @@ export async function POST(request: Request) {
             price
         } = await request.json();
 
-        // 🔥 Generate unique signal ID for tracking
-        const signalId = `${symbol}_${direction}_${comment}_${Date.now()}`;
+        // 🔥 Generate unique signal ID for tracking using Eastern Time
+        const easternTime = getEasternTime();
+        const signalId = `${symbol}_${direction}_${comment}_${easternTime.getTime()}`;
         console.log('Signal ID:', signalId);
+        console.log('Eastern Time:', easternTime.toLocaleString());
 
         console.log('=== TRADING SIGNAL RECEIVED ===');
         console.log('Text:', text);
@@ -146,6 +156,7 @@ export async function POST(request: Request) {
         console.log('Timeframe:', timeframe);
         console.log('Time of Message:', time_Of_Message);
         console.log('Symbol:', symbol);
+        console.log('Current Eastern Time:', easternTime.toLocaleString('en-US', { timeZone: 'America/New_York' }));
 
         // 🔥 1. Build a simple action key
         const actionKey = `${direction}_${comment}`;
@@ -181,7 +192,7 @@ export async function POST(request: Request) {
             symbol,
             contractId,
             timeframe,
-            timeOfMessage: time_Of_Message,
+            timeOfMessage: easternTime.toISOString(), // Use Eastern Time instead of incoming time
             text,
             quantity: TRADING_CONFIG.getQuantity(symbol),
             signalId,
