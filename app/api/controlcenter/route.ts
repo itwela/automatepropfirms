@@ -7,12 +7,12 @@ import { authService } from '../../services/authService';
 
 dotenv.config();
 
-// 🔥 Helper function to get Eastern Time (handles DST automatically)
-function getEasternTime(): Date {
-    const now = new Date();
-    // Use toLocaleString with timeZone to get proper Eastern Time including DST
-    const easternTimeString = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
-    return new Date(easternTimeString);
+// 🔥 Helper function to convert incoming time (4 hours ahead) to EST
+function getEasternTime(incomingTime: string): Date {
+    // Parse the incoming time and subtract 4 hours
+    const incomingDate = new Date(incomingTime);
+    const easternDate = new Date(incomingDate.getTime() - (4 * 60 * 60 * 1000)); // Subtract 4 hours
+    return easternDate;
 }
 
 //  NOTE - ADD A SYMBOL TO CONTRACT MAP AND QUANTITY CONFIG HERE🔥 Symbol to Contract mapping
@@ -143,20 +143,9 @@ export async function POST(request: Request) {
             price
         } = await request.json();
 
-        // 🔥 Generate unique signal ID for tracking using Eastern Time
-        const easternTime = getEasternTime();
+        // 🔥 Generate unique signal ID for tracking using Eastern Time (incoming time - 4 hours)
+        const easternTime = getEasternTime(time_Of_Message);
         const signalId = `${symbol}_${direction}_${comment}_${easternTime.getTime()}`;
-        console.log('Signal ID:', signalId);
-        console.log('Eastern Time:', easternTime.toLocaleString());
-
-        console.log('=== TRADING SIGNAL RECEIVED ===');
-        console.log('Text:', text);
-        console.log('Direction:', direction);
-        console.log('Comment:', comment);
-        console.log('Timeframe:', timeframe);
-        console.log('Time of Message:', time_Of_Message);
-        console.log('Symbol:', symbol);
-        console.log('Current Eastern Time:', easternTime.toLocaleString('en-US', { timeZone: 'America/New_York' }));
 
         // 🔥 1. Build a simple action key
         const actionKey = `${direction}_${comment}`;
