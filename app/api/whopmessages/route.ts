@@ -16,7 +16,7 @@ export async function POST(request: Request) {
         symbol ,
         price
     } = await request.json();
-// Validate required fields
+    // Validate required fields
     if (!text) {
       return NextResponse.json({ 
         success: false, 
@@ -24,15 +24,43 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Create message based on direction
+    // Format time for better readability
+    const formatTime = (timeString: string) => {
+      try {
+        const date = new Date(timeString);
+        if (isNaN(date.getTime())) {
+          return timeString; // Return original if can't parse
+        }
+        return date.toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        });
+      } catch {
+        return timeString; // Return original if error
+      }
+    };
+
+    const formattedTime = formatTime(time_Of_Message);
+
+    // Create message based on comment type
     let messageContent = '';
     
-    if (direction === 'buy') {
-        messageContent = `🟢 **BUY SIGNAL** 🟢\n\n📊 **${symbol}** - ${timeframe}\n💰 **Direction:** LONG\n📝 **Comment:** ${comment}\n⏰ **Time:** ${time_Of_Message}\n📈 **Price:** ${price || 'Market'}\n\n${text}`;
-    } else if (direction === 'sell') {
-        messageContent = `🔴 **SELL SIGNAL** 🔴\n\n📊 **${symbol}** - ${timeframe}\n💰 **Direction:** SHORT\n📝 **Comment:** ${comment}\n⏰ **Time:** ${time_Of_Message}\n📉 **Price:** ${price || 'Market'}\n\n${text}`;
+    if (comment === 'go_long') {
+        messageContent = `🟢 BUY SIGNAL - GO LONG 🟢\n\nSymbol: ${symbol}\nTimeframe: ${timeframe}\nAction: GO LONG\nDirection: BUY\nTime: ${formattedTime}\nPrice: ${price || 'Market'}\n\n${text}`;
+    } else if (comment === 'go_short') {
+        messageContent = `🔴 SELL SIGNAL - GO SHORT 🔴\n\nSymbol: ${symbol}\nTimeframe: ${timeframe}\nAction: GO SHORT\nDirection: SELL\nTime: ${formattedTime}\nPrice: ${price || 'Market'}\n\n${text}`;
+    } else if (comment === 'exit_long') {
+        messageContent = `❌ EXIT SIGNAL - CLOSE LONG 🔴\n\nSymbol: ${symbol}\nTimeframe: ${timeframe}\nAction: EXIT LONG\nDirection: SELL\nTime: ${formattedTime}\nPrice: ${price || 'Market'}\n\n${text}`;
+    } else if (comment === 'exit_short') {
+        messageContent = `❌ EXIT SIGNAL - CLOSE SHORT 🟢\n\nSymbol: ${symbol}\nTimeframe: ${timeframe}\nAction: EXIT SHORT\nDirection: BUY\nTime: ${formattedTime}\nPrice: ${price || 'Market'}\n\n${text}`;
     } else {
-        messageContent = `📊 **TRADING SIGNAL** 📊\n\n📊 **${symbol}** - ${timeframe}\n💰 **Direction:** ${direction.toUpperCase()}\n📝 **Comment:** ${comment}\n⏰ **Time:** ${time_Of_Message}\n💲 **Price:** ${price || 'Market'}\n\n${text}`;
+        // Fallback for unknown comment types
+        messageContent = `📊 TRADING SIGNAL 📊\n\nSymbol: ${symbol}\nTimeframe: ${timeframe}\nComment: ${comment}\nDirection: ${direction?.toUpperCase() || 'UNKNOWN'}\nTime: ${formattedTime}\nPrice: ${price || 'Market'}\n\n${text}`;
     }
 
     const payload = { content: messageContent };
